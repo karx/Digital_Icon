@@ -238,6 +238,49 @@ void execOTA()
   }
 }
 
+
+void updateCounter(mode, msg) {
+  switch (mode)
+  {
+  case "text":
+    P.setFont(ExtASCII);
+    delay(100);
+    P.displayText(msg.c_str(), PA_CENTER, 70, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+    break;
+  case "counter": 
+    P.setFont(numeric7Seg);
+    P.displayText(msg.c_str(), PA_CENTER, 70, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+    break;
+  default:
+    break;
+  }
+}
+
+void fxUpdate() {
+  if (fxMode == 0) {
+    int toShow = current_counter;
+    
+    if (target_counter != current_counter) {
+      toShow = (target_counter - current_counter)/2 + 1;
+    } else {
+      toShow = target_counter;
+      // we make sure target_counter is being displayed
+    }
+
+    updateCounter("counter", String(toShow));
+
+  }
+  
+}
+
+
+void setTargetCounter(msg) {
+  int val = stoi(msg);
+  Serial.println("val");
+  Serial.println(val);
+  target_counter = val;
+}
+
 // uint32_t bswqweqwe(String payload,int len)
 // {
 //     uint32_t i=0;
@@ -278,14 +321,14 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   }
   if (topics == "digitalicon/")
   {
-    P.setFont(ExtASCII);
-    delay(100);
-    P.displayText(msg.c_str(), PA_CENTER, 70, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+    fxMode = 1;
+    updateCounter("text", msg);
   }
   if (topics == "digitalicon/amit/count")
   {
-    P.setFont(numeric7Seg);
-    P.displayText(msg.c_str(), PA_CENTER, 70, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+    fxMode = 0;
+    
+    setTargetCounter(msg);
   }
 }
 
@@ -364,4 +407,5 @@ void loop()
 
   mqttClient.loop();
   wifiManager.process();
+  fxUpdate();
 }
