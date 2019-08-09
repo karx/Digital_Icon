@@ -8,5 +8,5 @@ const char HTTP_FORM_START[] PROGMEM      = "<form method='get'action='wifisave'
 const char HTTP_FORM_PARAM[] PROGMEM      = "<br/><input id='{i}'name='{n}'length={l}placeholder='{p}'value='{v}' {c}>";
 const char HTTP_FORM_END[] PROGMEM        = "<br/><button type='submit'>save</button></form>";
 const char HTTP_SCAN_LINK[] PROGMEM       = "<br/><div class=\"c\"><a href=\"/wifi\">Scan</a></div>";
-const char HTTP_SAVED[] PROGMEM           = "<div>Credentials Saved<br/>Trying to connect ESP to network.<br/>If it fails reconnect to AP to try again</div>";
+const char HTTP_SAVED[] PROGMEM           = "<div>Credentials Saved<br/>Trying to connect ESP to network.<br/>If it fails reconnect to AP to try again<br/>Click the below Button. <br/> <form><input type=\"button\" value=\"Get Authentication\" onclick=\"window.location.href='http://www.hyperlinkcode.com/button-links.php'\" /></form></div> ";
 const char HTTP_END[] PROGMEM             = "</div></body></html>";

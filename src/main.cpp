@@ -257,7 +257,7 @@ if (topics == "digitalicon/"){
 
 }
 if (topics == "digitalicon/amit/count"){
-      P.setFont(numeric7Seg);
+      P.setFont(numeric7Seg);    
       P.displayText(msg.c_str(), PA_CENTER, 70, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
 }
 }
@@ -299,7 +299,7 @@ void setup() {
  
   // Attempt to connect to Wifi network:
   Serial.print("Connecting Wifi: ");
-  wifiManager.setConnectTimeout(120);
+  wifiManager.setConnectTimeout(5);
 
   wifiManager.setConfigPortalBlocking(false);
   wifiManager.autoConnect("Digital Icon");    // SSID of config portal
@@ -328,19 +328,12 @@ void loop() {
       }
   }
 
-  else if (WiFi.status() != WL_CONNECTED){
-      wifiManager.autoConnect("Digital Icon");
-  }
+  // else if (WiFi.status() != WL_CONNECTED){
+  //     wifiManager.autoConnect("Digital Icon");
+  // }
 
 
   mqttClient.loop();
   wifiManager.process();
 
 }
-
-
-
-
-
-
-
