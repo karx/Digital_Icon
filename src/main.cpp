@@ -74,7 +74,10 @@ String getHeaderValue(String header, String headerName)
   return header.substring(strlen(headerName.c_str()));
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7a1dbabf9878fa7ddf268048f296afc7644c6244
 void execOTA()
 {
   Serial.println("Connecting to: " + String(host));
