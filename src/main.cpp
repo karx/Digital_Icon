@@ -56,6 +56,7 @@ WiFiManager wifiManager;
 
 char mo[75];
 String msg = "";
+String mac ;
 
 String host = "ytkarta.s3.ap-south-1.amazonaws.com"; // Host => bucket-name.s3.region.amazonaws.com
 int port = 80;                                       // Non https. For HTTPS 443. As of today, HTTPS doesn't work.
@@ -74,22 +75,51 @@ String getHeaderValue(String header, String headerName)
   return header.substring(strlen(headerName.c_str()));
 }
 
-<<<<<<< HEAD
+uint32_t getMacAddress1(const uint8_t *hwaddr1) {
+	// uint8_t baseMac[6];
+	// // Get MAC address for WiFi station
+	// esp_read_mac(*baseMac, ESP_MAC_WIFI_STA);
+	// // char baseMacChr[18] = {0};
+	// // sprintf(baseMacChr, "%02X:%02X:%02X:%02X:%02X:%02X", baseMac[0], baseMac[1], baseMac[2], baseMac[3], baseMac[4], baseMac[5]);
+	// return uint8_t(*baseMac);
 
-=======
->>>>>>> 7a1dbabf9878fa7ddf268048f296afc7644c6244
+    uint32_t value = 0;
+
+    value |= hwaddr1[2] << 24; //Big endian (aka "network order"):
+    value |= hwaddr1[3] << 16;
+    value |= hwaddr1[4] << 8;
+    value |= hwaddr1[5];
+    // Serial.println(hwaddr1[5]);
+    return value + 1;
+}
+
+String getMacAddress() {
+	uint8_t baseMac[6];
+	// Get MAC address for WiFi station
+	esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
+  // Serial.println(baseMac[6]);
+  uint8_t* fsas = (uint8_t*)baseMac;
+  uint32_t value1 = getMacAddress1(fsas);
+  Serial.println(value1);
+
+	// char baseMacChr[18] = {0};
+	// sprintf(baseMacChr, "%02X:%02X:%02X:%02X:%02X:%02X", baseMac[0], baseMac[1], baseMac[2], baseMac[3], baseMac[4], baseMac[5]);
+	return String(value1);
+}
+
+
 void execOTA()
 {
   Serial.println("Connecting to: " + String(host));
   // Connect to S3
-  if (client.connect(host.c_str(), port))
+  if (wifiClient.connect(host.c_str(), port))
   {
     // Connection Succeed.
     // Fecthing the bin
     Serial.println("Fetching Bin: " + String(bin));
 
     // Get the contents of the bin file
-    client.print(String("GET ") + bin + " HTTP/1.1\r\n" +
+    wifiClient.print(String("GET ") + bin + " HTTP/1.1\r\n" +
                  "Host: " + host + "\r\n" +
                  "Cache-Control: no-cache\r\n" +
                  "Connection: close\r\n\r\n");
@@ -101,12 +131,12 @@ void execOTA()
                  "Connection: close\r\n\r\n");
 
     unsigned long timeout = millis();
-    while (client.available() == 0)
+    while (wifiClient.available() == 0)
     {
       if (millis() - timeout > 5000)
       {
         Serial.println("Client Timeout !");
-        client.stop();
+        wifiClient.stop();
         return;
       }
     }
@@ -128,10 +158,10 @@ void execOTA()
                                    
         {{BIN FILE CONTENTS}}
     */
-    while (client.available())
+    while (wifiClient.available())
     {
       // read line till /n
-      String line = client.readStringUntil('\n');
+      String line = wifiClient.readStringUntil('\n');
       // remove space, to check if the line is end of headers
       line.trim();
 
@@ -202,7 +232,7 @@ void execOTA()
       Serial.println("Begin OTA. This may take 2 - 5 mins to complete. Things might be quite for a while.. Patience!");
       // No activity would appear on the Serial monitor
       // So be patient. This may take 2 - 5mins to complete
-      size_t written = Update.writeStream(client);
+      size_t written = Update.writeStream(wifiClient);
 
       if (written == contentLength)
       {
@@ -239,13 +269,13 @@ void execOTA()
       // Understand the partitions and
       // space availability
       Serial.println("Not enough space to begin OTA");
-      client.flush();
+      wifiClient.flush();
     }
   }
   else
   {
     Serial.println("There was no content in the response");
-    client.flush();
+    wifiClient.flush();
   }
 }
 
@@ -361,9 +391,15 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   if (topics == "digitalicon/ota" && msg == "ota")
   {
     Serial.println("Ota Initiating.........");
-    client.setTimeout(3000);
+    // client.setTimeout(3000);
+    
     execOTA();
+  } 
+  
+  else if (topics == "digitalicon/ota/version" ) {
+
   }
+
   if (topics == "digitalicon/")
   {
     fxMode = 1;
@@ -391,11 +427,23 @@ void reconnect()
     {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      mqttClient.publish("digitalicon", "Ready!");
+      String readyTopic = "digitalicon" + mac;
+      mqttClient.publish( readyTopic.c_str(), "Ready!");
+      mqttClient.publish( "digitalicon" , "Ready!");
+      Serial.println(readyTopic);
+
       // ... and resubscribe
       mqttClient.subscribe("digitalicon/ota");
       mqttClient.subscribe("digitalicon/");
+      String otaTopic = "digitalicon/ota/" + mac;
+      mqttClient.subscribe(otaTopic.c_str());
+
+      String msgTopic = "digitalicon/" + mac;
+      mqttClient.subscribe(msgTopic.c_str());
+
       mqttClient.subscribe("digitalicon/amit/count");
+      String countTopic = "digitalicon/count" + mac;
+      mqttClient.subscribe(countTopic.c_str());
     }
     else
     {
@@ -411,12 +459,17 @@ void reconnect()
 void setup()
 {
 
+
   Serial.begin(115200);
+  mac = getMacAddress();
+  Serial.println(mac);
   P.begin();
   P.setInvert(false);
+
   // P.print("YoYo"); // Starting text on matrix
-      P.displayText("YAROO", PA_CENTER, 0, 0, PA_NO_EFFECT, PA_NO_EFFECT);
-    P.displayAnimate();
+
+  P.displayText("YAROO", PA_CENTER, 0, 0, PA_NO_EFFECT, PA_NO_EFFECT);
+  P.displayAnimate();
 
 
   // Attempt to connect to Wifi network:
