@@ -139,9 +139,10 @@ void loop(void)
       outFX = (++outFX) % ARRAY_SIZE(effect);
       if (outFX == 0)
       {
+
         inFX = (++inFX) % ARRAY_SIZE(effect);
         if (inFX == 0)
-          P.setInvert(!P.getInvert());
+        P.setInvert(!P.getInvert());
       }
 
       P.setTextEffect(effect[inFX], effect[outFX]);

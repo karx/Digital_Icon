@@ -63,10 +63,26 @@ int port = 80;                                       // Non https. For HTTPS 443
 String bin = "/kaaroMerch/SubsCount/firmware.bin";   // bin file name with a slash in front.
 
 
+
+String ssid ="";
+String pass = "";
+
+
 int fxMode;
 
 uint32_t current_counter = 0;
 uint32_t target_counter = 0;
+
+uint8_t scrollSpeed = 25;    // default frame delay value
+textEffect_t scrollEffect = PA_SCROLL_LEFT;
+textPosition_t scrollAlign = PA_LEFT;
+uint16_t scrollPause = 2000; // in milliseconds
+
+// Global message buffers shared by Serial and Scrolling functions
+#define	BUF_SIZE	75
+char curMessage[BUF_SIZE] = { "Booting Up" };
+// char newMessage[BUF_SIZE] = { "Hello! Enter new message?" };
+bool newMessageAvailable = true;
 
 // https://ytkarta.s3.ap-south-1.amazonaws.com/kaaroMerch/SubsCount/firmware.bin
 // Utility to extract header value from headers
@@ -416,7 +432,7 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
 void reconnect()
 {
   // Loop until we're reconnected
-  while (!mqttClient.connected())
+  while(!mqttClient.connected())
   {
     Serial.print("Attempting MQTT connection...");
     // Create a random client ID
@@ -427,10 +443,10 @@ void reconnect()
     {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      String readyTopic = "digitalicon" + mac;
+      String readyTopic = "digitalicon/" + mac;
       mqttClient.publish( readyTopic.c_str(), "Ready!");
       mqttClient.publish( "digitalicon" , "Ready!");
-      Serial.println(readyTopic);
+      // Serial.println(readyTopic);
 
       // ... and resubscribe
       mqttClient.subscribe("digitalicon/ota");
@@ -445,6 +461,9 @@ void reconnect()
       String countTopic = "digitalicon/count" + mac;
       mqttClient.subscribe(countTopic.c_str());
     }
+    // else if (WiFi.status() != WL_CONNECTED){
+    //   break;
+    // }
     else
     {
       Serial.print("failed, rc=");
@@ -466,24 +485,34 @@ void setup()
   P.begin();
   P.setInvert(false);
 
-  // P.print("YoYo"); // Starting text on matrix
-
-  P.displayText("YAROO", PA_CENTER, 0, 0, PA_NO_EFFECT, PA_NO_EFFECT);
-  P.displayAnimate();
+  P.print("Booting"); // Starting text on matrix
+  //  P.displayText(curMessage, scrollAlign, scrollSpeed, scrollPause, scrollEffect, scrollEffect);
+  // P.displayText("YAROO", PA_CENTER, 70, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+  // P.displayAnimate();
 
 
   // Attempt to connect to Wifi network:
   Serial.print("Connecting Wifi: ");
-  wifiManager.setConnectTimeout(20);
+  wifiManager.setConnectTimeout(30);
 
   wifiManager.setConfigPortalBlocking(false);
+ wifiManager.setWiFiAutoReconnect(true);
   wifiManager.autoConnect("Digital Icon"); // SSID of config portal
+    // wm.setAPCallback(configModeCallback);
 
+if (WiFi.status() == WL_CONNECTED){
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   IPAddress ip = WiFi.localIP();
   Serial.println(ip);
+  // Serial.println(WiFiManager._ssid());
+   ssid = WiFi.SSID();
+   pass = WiFi.psk();
+
+
+}
+
 
   mqttClient.setServer(mqtt_server, 1883);
   mqttClient.setCallback(mqttCallback);
@@ -491,6 +520,25 @@ void setup()
 
 void loop()
 {
+  // if(P.displayAnimate()){
+  //     P.displayReset();
+  // }
+  wifiManager.process();
+
+  if (WiFi.status() != WL_CONNECTED){
+
+        // String ssid = WiFi.SSID();
+        Serial.println(ssid.c_str());
+
+        
+        Serial.println(WiFi.psk().c_str());
+
+        while (WiFi.status() != WL_CONNECTED) {
+        WiFi.begin(ssid.c_str(),WiFi.psk().c_str());
+        delay(1000);
+        Serial.print(".");
+    }
+  }
 
   if (WiFi.status() == WL_CONNECTED)
   {
@@ -500,6 +548,10 @@ void loop()
       reconnect();
     }
   }
+  else {
+    //  WiFi.begin(_ssid,_pass);
+    //  Serial.println(_ssid);
+  }
 
   // else if (WiFi.status() != WL_CONNECTED)
   // {
@@ -507,7 +559,6 @@ void loop()
   // }
 
   mqttClient.loop();
-  wifiManager.process();
   fxUpdate();
 
 }
