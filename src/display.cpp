@@ -1,73 +1,9 @@
-
-
-#include <MD_Parola.h>
+#include <display.h>
+// #include <MD_Parola.h>
 #include <MD_MAX72xx.h>
 #include "Parola_Fonts_data.h"
 #include <Font_Data.h>
 
-// TODO: remove this
-// typedef int uint32_t;
-
-#define HARDWARE_TYPE MD_MAX72XX::FC16_HW
-#define MAX_DEVICES 4
-#define CLK_PIN 14
-#define DATA_PIN 23
-#define CS_PIN 15
-
-#define BOOT_TEXT "Warming up"
-#define TIMEOUT_PERIOD 9000
-
-enum di_display_states
-{
-    BOOTING,
-    CONNECTING,
-    COUNTER,
-    MESSAGE,
-    ERROR
-};
-enum di_display_type
-{
-    DOTMATRIX
-};
-enum di_display_mode
-{
-    STANDARD_MODE,
-    VINTAGE_MODE,
-    SCROLL_MODE,
-    BETA_MODE
-};
-MD_Parola ParolaDisplay = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
-
-class DigitalIconDisplay
-{
-public:
-    uint32_t counter_value;
-    char display_text[100];
-    enum di_display_states display_state;
-    enum di_display_type display_type;
-    enum di_display_mode display_mode;
-
-private:
-    uint32_t current_counter_value;
-    uint32_t target_counter_value;
-    enum di_display_states last_frame_display_state;
-    unsigned long timeout_start_millis;
-    bool text_refresh = false;
-
-public:
-    DigitalIconDisplay();
-    int setupIcon();
-    int updateCounterValue(uint32_t new_counter_value);
-    int updateCounterValue(String new_counter_value);
-    int showCustomMessage(char *custom_text);
-    int updateDisplayState(di_display_states updated_state);
-    int updateDisplayMode(di_display_mode updated_mode);
-    void loop();
-
-private:
-    int refreshScreenWithText();
-    int refreshScreenWithCounter();
-};
 
 DigitalIconDisplay::DigitalIconDisplay() 
 {
@@ -82,7 +18,7 @@ int DigitalIconDisplay::setupIcon()
 {
     ParolaDisplay.begin();
     ParolaDisplay.setInvert(false);
-    ParolaDisplay.displayText(BOOT_TEXT, PA_CENTER, 0, 0, PA_NO_EFFECT, PA_NO_EFFECT);
+    ParolaDisplay.displayText(BOOT_TEXT, PA_CENTER, 0, 0, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
     ParolaDisplay.displayAnimate();
     return 1;
 }

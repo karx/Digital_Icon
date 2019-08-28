@@ -1,34 +1,28 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <Update.h>
+#include <ota.h>
 
 int _contentLength = 0;
 bool _isValidContentType = false;
-
-class OTA_ESP32
-{
-
-    static void execOTA(String host, int port, String bin, WiFiClient *wifiClient_ptr);
-    
-};
 
 String _getHeaderValue(String header, String headerName)
 {
   return header.substring(strlen(headerName.c_str()));
 }
 
-void OTA_ESP32::execOTA(String host, int port, String bin, WiFiClient *wifiClient_ptr)
+void OTA_ESP32::execOTA(String host, int port, String bin, WiFiClient *wifiClient)
     {
         Serial.println("Connecting to: " + String(host));
         // Connect to S3
-        if (wifiClient_ptr->connect(host.c_str(), port))
+        if (wifiClient->connect(host.c_str(), port))
         {
             // Connection Succeed.
             // Fecthing the bin
             Serial.println("Fetching Bin: " + String(bin));
 
             // Get the contents of the bin file
-            wifiClient_ptr->print(String("GET ") + bin + " HTTP/1.1\r\n" +
+            wifiClient->print(String("GET ") + bin + " HTTP/1.1\r\n" +
                              "Host: " + host + "\r\n" +
                              "Cache-Control: no-cache\r\n" +
                              "Connection: close\r\n\r\n");
@@ -40,12 +34,12 @@ void OTA_ESP32::execOTA(String host, int port, String bin, WiFiClient *wifiClien
                          "Connection: close\r\n\r\n");
 
             unsigned long timeout = millis();
-            while (wifiClient_ptr->available() == 0)
+            while (wifiClient->available() == 0)
             {
                 if (millis() - timeout > 5000)
                 {
                     Serial.println("Client Timeout !");
-                    wifiClient_ptr->stop();
+                    wifiClient->stop();
                     return;
                 }
             }
@@ -67,10 +61,10 @@ void OTA_ESP32::execOTA(String host, int port, String bin, WiFiClient *wifiClien
                                    
         {{BIN FILE CONTENTS}}
     */
-            while (wifiClient_ptr->available())
+            while (wifiClient->available())
             {
                 // read line till /n
-                String line = wifiClient_ptr->readStringUntil('\n');
+                String line = wifiClient->readStringUntil('\n');
                 // remove space, to check if the line is end of headers
                 line.trim();
 
@@ -141,7 +135,7 @@ void OTA_ESP32::execOTA(String host, int port, String bin, WiFiClient *wifiClien
                 Serial.println("Begin OTA. This may take 2 - 5 mins to complete. Things might be quite for a while.. Patience!");
                 // No activity would appear on the Serial monitor
                 // So be patient. This may take 2 - 5mins to complete
-                size_t written = Update.writeStream(*wifiClient_ptr);
+                size_t written = Update.writeStream(*wifiClient);
 
                 if (written == _contentLength)
                 {
@@ -178,13 +172,13 @@ void OTA_ESP32::execOTA(String host, int port, String bin, WiFiClient *wifiClien
                 // Understand the partitions and
                 // space availability
                 Serial.println("Not enough space to begin OTA");
-                wifiClient_ptr->flush();
+                wifiClient->flush();
             }
         }
         else
         {
             Serial.println("There was no content in the response");
-            wifiClient_ptr->flush();
+            wifiClient->flush();
         }
     }
  
