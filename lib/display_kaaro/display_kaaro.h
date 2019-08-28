@@ -4,13 +4,11 @@
 #include <MD_Parola.h>
 #include <MD_MAX72xx.h>
 
-
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW
 #define MAX_DEVICES 4
 #define CLK_PIN 14
 #define DATA_PIN 23
 #define CS_PIN 15
-
 
 #define BOOT_TEXT "Warming up"
 #define TIMEOUT_PERIOD 9000
@@ -34,8 +32,7 @@ enum di_display_mode
     SCROLL_MODE,
     BETA_MODE
 };
-MD_Parola ParolaDisplay = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
- 
+
 class DigitalIconDisplay
 {
 public:
@@ -53,20 +50,18 @@ private:
     bool text_refresh = false;
 
 public:
-
     DigitalIconDisplay();
     int setupIcon();
     int updateCounterValue(uint32_t new_counter_value);
-    int updateCounterValue(String new_counter_value);
+    int updateCounterValue(String new_counter_value, bool isString);
     int showCustomMessage(char *custom_text);
+    int showCustomMessage(String custom_text);
     int updateDisplayState(di_display_states updated_state);
     int updateDisplayMode(di_display_mode updated_mode);
     void loop();
 
 private:
-
     int refreshScreenWithText();
     int refreshScreenWithCounter();
 };
 #endif
-

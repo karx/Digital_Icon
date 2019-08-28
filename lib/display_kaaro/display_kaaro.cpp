@@ -1,9 +1,15 @@
-#include <display.h>
-// #include <MD_Parola.h>
-#include <MD_MAX72xx.h>
+#include <display_kaaro.h>
 #include "Parola_Fonts_data.h"
 #include <Font_Data.h>
+uint32_t stoi(String payload, int len);
 
+uint8_t scrollSpeed = 25;
+textEffect_t scrollEffect = PA_SCROLL_LEFT;
+textPosition_t scrollAlign = PA_LEFT;
+uint16_t scrollPause = 2000;
+
+
+MD_Parola ParolaDisplay = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
 
 DigitalIconDisplay::DigitalIconDisplay() 
 {
@@ -87,11 +93,23 @@ int DigitalIconDisplay::showCustomMessage(char *custom_text)
     updateDisplayState(MESSAGE);
     return 1;
 }
+int DigitalIconDisplay::showCustomMessage(String custom_text) 
+{
+    char buff[100];
+    custom_text.toCharArray(buff, 100);
+    return showCustomMessage(buff);
+}
 
 int DigitalIconDisplay::updateCounterValue(uint32_t new_counter_value)
 {
     target_counter_value = new_counter_value;
     return 1;
+}
+
+int DigitalIconDisplay::updateCounterValue(String new_counter_value, bool isString) {
+    return updateCounterValue(
+        stoi(new_counter_value, new_counter_value.length())
+    ); 
 }
 
 void DigitalIconDisplay::loop()
@@ -173,4 +191,17 @@ int DigitalIconDisplay::refreshScreenWithCounter()
     // P.displayText(msg.c_str(), PA_CENTER, 70, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
     ParolaDisplay.print(String(counter_value).c_str());
     return 1;
+}
+
+uint32_t stoi(String payload, int len)
+{
+  uint32_t i = 0;
+  uint32_t result = 0;
+  for (i = 0; i < len; i++)
+  {
+    result *= 10;
+    result += (char)payload[i] - '0';
+  }
+
+  return result;
 }

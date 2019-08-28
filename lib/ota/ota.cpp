@@ -1,7 +1,5 @@
-#include <Arduino.h>
-#include <WiFi.h>
-#include <Update.h>
 #include <ota.h>
+#include <Update.h>
 
 int _contentLength = 0;
 bool _isValidContentType = false;
