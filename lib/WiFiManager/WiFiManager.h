@@ -13,7 +13,7 @@
 
 #ifndef WiFiManager_h
 #define WiFiManager_h
-
+#define ESP32 1
 #if defined(ESP8266) || defined(ESP32)
 
 #ifdef ESP8266
@@ -310,7 +310,7 @@ class WiFiManager
     String        _apPassword             = "";
     String        _ssid                   = "";
     String        _pass                   = "";
-    
+
     // options flags
     unsigned long _configPortalTimeout    = 0; // ms close config portal loop if set (depending on  _cp/webClientCheck options)
     unsigned long _connectTimeout         = 0; // ms stop trying to connect to ap if set

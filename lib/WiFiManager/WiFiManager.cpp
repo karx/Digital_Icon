@@ -335,6 +335,7 @@ boolean WiFiManager::autoConnect(char const *apName, char const *apPassword) {
 
   // not connected start configportal
   return startConfigPortal(apName, apPassword);
+  // return false;
 }
 
 // CONFIG PORTAL
@@ -788,7 +789,7 @@ bool WiFiManager::wifiConnectNew(String ssid, String pass){
 bool WiFiManager::wifiConnectDefault(){
   bool ret = false;
   DEBUG_WM(F("Connecting to saved AP:"),WiFi_SSID());
-  DEBUG_WM(DEBUG_DEV,F("Using Password:"),WiFi.psk());
+  DEBUG_WM(DEBUG_DEV,F("Using password:"),WiFi.psk());
   ret = WiFi_enableSTA(true,storeSTAmode);
   if(!ret) DEBUG_WM(DEBUG_ERROR,"[ERROR] wifi enableSta failed");
   ret = WiFi.begin();
