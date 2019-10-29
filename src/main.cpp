@@ -11,7 +11,6 @@
 #include <Update.h>
 #include <elapsedMillis.h>
 
-
 #include <ota.h>
 #include "display_kaaro.h"
 #include "kaaro_utils.cpp"
@@ -32,8 +31,6 @@ const uint16_t WAIT_TIME = 1000;
 void displayScroll(char *pText, textPosition_t align, textEffect_t effect, uint16_t speed);
 void mqttCallback(char *topic, byte *payload, unsigned int length);
 
-
-
 /* 
  REALTIME VARIABLES
 */
@@ -45,7 +42,6 @@ unsigned long api_mtbs = 10000;
 unsigned long api_lasttime;
 
 long subs = 0;
-
 
 String host = "ytkarta.s3.ap-south-1.amazonaws.com"; // Host => bucket-name.s3.region.amazonaws.com
 int port = 80;                                       // Non https. For HTTPS 443. As of today, HTTPS doesn't work.
@@ -69,7 +65,6 @@ unsigned long delayStart = 0; // the time the delay started
 bool delayRunning = false;
 unsigned int interval = 30000;
 
-
 /*
   HY Variable/Instance creation
 */
@@ -81,7 +76,6 @@ WiFiClientSecure client;
 YoutubeApi api(API_KEY, client);
 DigitalIconDisplay display;
 elapsedMillis timeElapsed;
-
 
 void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
 {
@@ -116,14 +110,12 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
     display.updateCounterValue(msg, true);
   }
 
-    if (topics == "digitalicon/91springboards1/message")
+  if (topics == "digitalicon/91springboards1/message")
   {
     Serial.println("From message topic");
     display.showCustomMessage(msg);
   }
-
 }
-
 
 void reconnect()
 {
@@ -175,22 +167,21 @@ void setup()
   DEVICE_MAC_ADDRESS = KaaroUtils::getMacAddress();
   Serial.println(DEVICE_MAC_ADDRESS);
   WiFi.macAddress(mac);
-    Serial.print("MAC: ");
-    Serial.print(mac[0],HEX);
-    Serial.print(":");
-    Serial.print(mac[1],HEX);
-    Serial.print(":");
-    Serial.print(mac[2],HEX);
-    Serial.print(":");
-    Serial.print(mac[3],HEX);
-    Serial.print(":");
-    Serial.print(mac[4],HEX);
-    Serial.print(":");
-    Serial.println(mac[5],HEX);
+  Serial.print("MAC: ");
+  Serial.print(mac[0], HEX);
+  Serial.print(":");
+  Serial.print(mac[1], HEX);
+  Serial.print(":");
+  Serial.print(mac[2], HEX);
+  Serial.print(":");
+  Serial.print(mac[3], HEX);
+  Serial.print(":");
+  Serial.print(mac[4], HEX);
+  Serial.print(":");
+  Serial.println(mac[5], HEX);
 
   display.setupIcon();
   display.updateCounterValue("0", true);
-
 
   Serial.print("Connecting Wifi: ");
   wifiManager.setConnectTimeout(5);
@@ -220,30 +211,30 @@ void loop()
 
   wifiManager.process();
 
-     if (timeElapsed > interval) 
-  {				
-      Serial.print("From here");
+  if (timeElapsed > interval)
+  {
+    Serial.print("From here");
     // display.showCustomMessage(" Total ");
-      
-        switch (cases)
-        {
-        case 1:
-          display.stripe();
-          cases = 2;
-          break;
-        case 2:
-        display.spiral();
-        cases = 3;
-        break;
-        case 3:
-        display.showCustomMessage(" Cowork.Network.Grow ");
-        cases = 4;
-        break;
-        case 4:
-        display.bounce();
-        cases = 1;
-        break;
-        }
+
+    switch (cases)
+    {
+    case 1:
+      display.stripe();
+      cases = 2;
+      break;
+    case 2:
+      display.spiral();
+      cases = 3;
+      break;
+    case 3:
+      display.showCustomMessage(" Cowork.Network.Grow ");
+      cases = 4;
+      break;
+    case 4:
+      display.bounce();
+      cases = 1;
+      break;
+    }
     timeElapsed = 0;
   }
 
@@ -255,7 +246,6 @@ void loop()
       reconnect();
     }
   }
-  mqttClient.loop(); 
+  mqttClient.loop();
   display.loop();
-
 }
