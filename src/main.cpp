@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-#include <YoutubeApi.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <WiFiManager.h>
@@ -18,8 +17,6 @@
 /* 
     STATICS
 */
-#define API_KEY "AIzaSyBQeMMEWAZNErbkgtcvF6iaJFW4237Vkfw"
-#define CHANNEL_ID "UC_vcKmg67vjMP7ciLnSxSHQ"
 const char *mqtt_server = "api.akriya.co.in";
 const uint16_t WAIT_TIME = 1000;
 #define BUF_SIZE 75
@@ -37,11 +34,6 @@ void mqttCallback(char *topic, byte *payload, unsigned int length);
 
 int contentLength = 0;
 bool isValidContentType = false;
-
-unsigned long api_mtbs = 10000;
-unsigned long api_lasttime;
-
-long subs = 0;
 
 String host = "ytkarta.s3.ap-south-1.amazonaws.com"; // Host => bucket-name.s3.region.amazonaws.com
 int port = 80;                                       // Non https. For HTTPS 443. As of today, HTTPS doesn't work.
@@ -73,7 +65,7 @@ WiFiClient wifiClient;
 PubSubClient mqttClient(mqtt_server, 1883, mqttCallback, wifiClient);
 WiFiManager wifiManager;
 WiFiClientSecure client;
-YoutubeApi api(API_KEY, client);
+
 DigitalIconDisplay display;
 elapsedMillis timeElapsed;
 
