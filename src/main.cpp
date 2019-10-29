@@ -9,6 +9,7 @@
 #include <ArduinoJson.h>
 #include <Update.h>
 #include <elapsedMillis.h>
+#include <string> 
 
 #include <ota.h>
 #include "display_kaaro.h"
@@ -78,6 +79,7 @@ WiFiClientSecure client;
 DigitalIconDisplay display;
 elapsedMillis timeElapsed;
 Preferences preferences;
+#define convertToString(x) #x
 
 
 void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
@@ -206,8 +208,11 @@ void setup()
   Serial.println("Boot setup with ");
   Serial.println(target_counter);
   
+  char str[100];
+  sprintf(str, "%d", target_counter);
+  String s = str;
   display.setupIcon();
-  display.updateCounterValue(target_counter);
+  display.updateCounterValue(s, true);
 
   Serial.print("Connecting Wifi: ");
   wifiManager.setConnectTimeout(5);
