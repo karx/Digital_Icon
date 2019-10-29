@@ -21,6 +21,14 @@ const char *mqtt_server = "api.akriya.co.in";
 const uint16_t WAIT_TIME = 1000;
 #define BUF_SIZE 75
 
+String ROOT_MQ_ROOT = "digitalicon/";
+String PRODUCT_MQ_SUB = "91springboards1/";
+String MESSAGE_MQ_STUB = "message";
+String COUNT_MQ_STUB = "count";
+String OTA_MQ_SUB = "ota/";
+
+String PRODUCT_UNIQUE = " Cowork.Network.Grow ";
+
 /* 
     FUNCTION DEFINATIONS
 */
@@ -44,6 +52,7 @@ String msg = "";
 String DEVICE_MAC_ADDRESS;
 String ssid = "";
 String pass = "";
+
 byte mac[6];
 
 int cases = 1;
@@ -81,7 +90,18 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   Serial.print("From MQTT = ");
   Serial.println(msg);
 
-  if (topics == "digitalicon/ota" && msg == "ota")
+  String rootTopic = ROOT_MQ_ROOT;
+  String readyTopic = ROOT_MQ_ROOT + DEVICE_MAC_ADDRESS;
+
+  String otaTopic = ROOT_MQ_ROOT + OTA_MQ_SUB;
+
+  String productMessageTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + MESSAGE_MQ_STUB;
+  String productCountTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + COUNT_MQ_STUB;
+
+  String messageTopic = ROOT_MQ_ROOT + MESSAGE_MQ_STUB + '/' + DEVICE_MAC_ADDRESS;
+  // String countTopic = ROOT_MQ_ROOT + COUNT_MQ_STUB + DEVICE_MAC_ADDRESS;
+
+  if (topics == otaTopic && msg == "ota")
   {
     Serial.println("Ota Initiating.........");
 
@@ -92,17 +112,17 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   {
   }
 
-  if (topics == "digitalicon/")
+  if (topics == rootTopic)
   {
     display.showCustomMessage(msg);
   }
-  if (topics == "digitalicon/91springboards1/count")
+  if (topics == productCountTopic)
   {
     Serial.println("From count topic");
     display.updateCounterValue(msg, true);
   }
 
-  if (topics == "digitalicon/91springboards1/message")
+  if (topics == productMessageTopic || topics == messageTopic)
   {
     Serial.println("From message topic");
     display.showCustomMessage(msg);
@@ -123,21 +143,28 @@ void reconnect()
     {
       Serial.println("connected");
 
-      String readyTopic = "digitalicon/" + DEVICE_MAC_ADDRESS;
-      mqttClient.publish(readyTopic.c_str(), "Ready!");
-      mqttClient.publish("digitalicon", "Ready!");
+      String rootTopic = ROOT_MQ_ROOT;
+      String readyTopic = ROOT_MQ_ROOT + DEVICE_MAC_ADDRESS;
 
-      mqttClient.subscribe("digitalicon/ota");
-      mqttClient.subscribe("digitalicon/");
-      mqttClient.subscribe("digitalicon/91springboards1/message");
-      String otaTopic = "digitalicon/ota/" + DEVICE_MAC_ADDRESS;
+      String otaTopic = ROOT_MQ_ROOT + OTA_MQ_SUB + DEVICE_MAC_ADDRESS;
+
+      String productMessageTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + MESSAGE_MQ_STUB;
+      String productCountTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + COUNT_MQ_STUB;
+
+      String messageTopic = ROOT_MQ_ROOT + MESSAGE_MQ_STUB + DEVICE_MAC_ADDRESS;
+      String countTopic = ROOT_MQ_ROOT + COUNT_MQ_STUB + DEVICE_MAC_ADDRESS;
+
+      String readyMessage = DEVICE_MAC_ADDRESS + " is Ready.";
+      mqttClient.publish(readyTopic.c_str(), "Ready!");
+      mqttClient.publish(rootTopic.c_str(), readyMessage.c_str());
+
+      mqttClient.subscribe(rootTopic.c_str());
       mqttClient.subscribe(otaTopic.c_str());
 
-      String msgTopic = "digitalicon/" + DEVICE_MAC_ADDRESS;
-      mqttClient.subscribe(msgTopic.c_str());
+      mqttClient.subscribe(productMessageTopic.c_str());
+      mqttClient.subscribe(productCountTopic.c_str());
 
-      mqttClient.subscribe("digitalicon/91springboards1/count");
-      String countTopic = "digitalicon/count" + DEVICE_MAC_ADDRESS;
+      mqttClient.subscribe(messageTopic.c_str());
       mqttClient.subscribe(countTopic.c_str());
     }
 
@@ -202,33 +229,6 @@ void loop()
 {
 
   wifiManager.process();
-
-  if (timeElapsed > interval)
-  {
-    Serial.print("From here");
-    // display.showCustomMessage(" Total ");
-
-    switch (cases)
-    {
-    case 1:
-      display.stripe();
-      cases = 2;
-      break;
-    case 2:
-      display.spiral();
-      cases = 3;
-      break;
-    case 3:
-      display.showCustomMessage(" Cowork.Network.Grow ");
-      cases = 4;
-      break;
-    case 4:
-      display.bounce();
-      cases = 1;
-      break;
-    }
-    timeElapsed = 0;
-  }
 
   if (WiFi.status() == WL_CONNECTED)
   {
