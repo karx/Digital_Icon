@@ -229,7 +229,7 @@ int DigitalIconDisplay::showCustomMessage(String custom_text)
 int DigitalIconDisplay::updateCounterValue(uint32_t new_counter_value)
 {
     target_counter_value = new_counter_value;
-    return 1;
+    return target_counter_value;
 }
 
 int DigitalIconDisplay::updateCounterValue(String new_counter_value, bool isString) {

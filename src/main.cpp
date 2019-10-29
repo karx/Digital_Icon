@@ -13,6 +13,7 @@
 #include <ota.h>
 #include "display_kaaro.h"
 #include "kaaro_utils.cpp"
+#include <Preferences.h>
 
 /* 
     STATICS
@@ -59,7 +60,6 @@ int cases = 1;
 
 int fxMode;
 
-uint32_t current_counter = 0;
 uint32_t target_counter = 0;
 
 unsigned long delayStart = 0; // the time the delay started
@@ -77,6 +77,8 @@ WiFiClientSecure client;
 
 DigitalIconDisplay display;
 elapsedMillis timeElapsed;
+Preferences preferences;
+
 
 void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
 {
@@ -118,13 +120,14 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   }
   if (topics == productCountTopic)
   {
-    Serial.println("From count topic");
-    display.updateCounterValue(msg, true);
+    Serial.println(msg + " | From count topic");
+    uint32_t counterVal = display.updateCounterValue(msg, true);
+    preferences.putUInt("target_counter", counterVal);
   }
 
   if (topics == productMessageTopic || topics == messageTopic)
   {
-    Serial.println("From message topic");
+    Serial.println(msg + " | From message topic");
     display.showCustomMessage(msg);
   }
 }
@@ -198,9 +201,13 @@ void setup()
   Serial.print(mac[4], HEX);
   Serial.print(":");
   Serial.println(mac[5], HEX);
-
+  preferences.begin("digitalicon", false);
+  target_counter = preferences.getUInt("target_counter", 720);
+  Serial.println("Boot setup with ");
+  Serial.println(target_counter);
+  
   display.setupIcon();
-  display.updateCounterValue("0", true);
+  display.updateCounterValue(target_counter);
 
   Serial.print("Connecting Wifi: ");
   wifiManager.setConnectTimeout(5);
