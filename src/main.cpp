@@ -96,7 +96,7 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   String rootTopic = ROOT_MQ_ROOT;
   String readyTopic = ROOT_MQ_ROOT + DEVICE_MAC_ADDRESS;
 
-  String otaTopic = ROOT_MQ_ROOT + OTA_MQ_SUB;
+  String otaTopic = ROOT_MQ_ROOT + OTA_MQ_SUB + DEVICE_MAC_ADDRESS;
 
   String productMessageTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + MESSAGE_MQ_STUB;
   String productCountTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + COUNT_MQ_STUB;
@@ -131,6 +131,8 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
     Serial.println(msg + " | From message topic");
     display.showCustomMessage(msg);
   }
+
+  
 }
 
 void reconnect()
