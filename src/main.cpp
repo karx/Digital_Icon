@@ -1,3 +1,4 @@
+# define DI_Version "1.0.2-kaaroCount"
 #include <Arduino.h>
 #include <SPI.h>
 
@@ -17,19 +18,40 @@
 #include <Preferences.h>
 
 /* 
-    STATICS
+    
+    
 */
 const char *mqtt_server = "api.akriya.co.in";
 const uint16_t WAIT_TIME = 1000;
+unsigned long long current_loop_counter = 0;
+uint16_t current_brain_counter = 0;
+
+const unsigned long long brain_beat = 1000000;
 #define BUF_SIZE 75
 
+String META_ROOT = "Kento/present/";
 String ROOT_MQ_ROOT = "digitalicon/";
-String PRODUCT_MQ_SUB = "91springboards1/";
+String PRODUCT_MQ_SUB = "kaaroCount/";
 String MESSAGE_MQ_STUB = "message";
 String COUNT_MQ_STUB = "count";
 String OTA_MQ_SUB = "ota/";
 
-String PRODUCT_UNIQUE = " Cowork.Network.Grow ";
+String presenceTopic;
+String presenceDemandTopic;
+
+String rootTopic;
+String readyTopic;
+
+String otaTopic;
+
+String productMessageTopic;
+String productCountTopic;
+
+String messageTopic;
+String countTopic;
+  
+
+String PRODUCT_UNIQUE = " Hakuna Matata ";
 
 /* 
     FUNCTION DEFINATIONS
@@ -37,7 +59,8 @@ String PRODUCT_UNIQUE = " Cowork.Network.Grow ";
 
 void displayScroll(char *pText, textPosition_t align, textEffect_t effect, uint16_t speed);
 void mqttCallback(char *topic, byte *payload, unsigned int length);
-
+void mqttSetTopicValues();
+void pushEveryLoop();
 /* 
  REALTIME VARIABLES
 */
@@ -47,7 +70,7 @@ bool isValidContentType = false;
 
 String host = "ytkarta.s3.ap-south-1.amazonaws.com"; // Host => bucket-name.s3.region.amazonaws.com
 int port = 80;                                       // Non https. For HTTPS 443. As of today, HTTPS doesn't work.
-String bin = "/kaaroMerch/SubsCount/firmware.bin";   // bin file name with a slash in front.
+String bin = "/kaaroMerch/kaaroCount/firmware.bin";   // bin file name with a slash in front.
 
 char mo[75];
 String msg = "";
@@ -90,18 +113,9 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   free(cleanPayload);
 
   String topics = String(topic);
-  Serial.print("From MQTT = ");
+  Serial.printf("From MQTT = ");
   Serial.println(msg);
 
-  String rootTopic = ROOT_MQ_ROOT;
-  String readyTopic = ROOT_MQ_ROOT + DEVICE_MAC_ADDRESS;
-
-  String otaTopic = ROOT_MQ_ROOT + OTA_MQ_SUB + DEVICE_MAC_ADDRESS;
-
-  String productMessageTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + MESSAGE_MQ_STUB;
-  String productCountTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + COUNT_MQ_STUB;
-
-  String messageTopic = ROOT_MQ_ROOT + MESSAGE_MQ_STUB + '/' + DEVICE_MAC_ADDRESS;
   // String countTopic = ROOT_MQ_ROOT + COUNT_MQ_STUB + DEVICE_MAC_ADDRESS;
 
   if (topics == otaTopic && msg == "ota")
@@ -111,8 +125,10 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
     OTA_ESP32::execOTA(host, port, bin, &wifiClient);
   }
 
-  else if (topics == "digitalicon/ota/version")
+  else if (topics == presenceDemandTopic)
   {
+    Serial.println(DI_Version);
+    mqttClient.publish(presenceTopic.c_str(), (DI_Version + String(current_brain_counter)).c_str());
   }
 
   if (topics == rootTopic)
@@ -135,6 +151,22 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   
 }
 
+void mqttSetTopicValues() {
+  presenceTopic = META_ROOT + DEVICE_MAC_ADDRESS;
+  presenceDemandTopic = META_ROOT + "REPORT";
+  
+  rootTopic = ROOT_MQ_ROOT;
+  readyTopic = ROOT_MQ_ROOT + DEVICE_MAC_ADDRESS;
+
+  otaTopic = ROOT_MQ_ROOT + OTA_MQ_SUB + DEVICE_MAC_ADDRESS;
+
+  productMessageTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + MESSAGE_MQ_STUB;
+  productCountTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + COUNT_MQ_STUB;
+
+  messageTopic = ROOT_MQ_ROOT + MESSAGE_MQ_STUB + '/' + DEVICE_MAC_ADDRESS;
+  countTopic = ROOT_MQ_ROOT + COUNT_MQ_STUB + '/' + DEVICE_MAC_ADDRESS;
+}
+
 void reconnect()
 {
 
@@ -149,24 +181,14 @@ void reconnect()
     {
       Serial.println("connected");
 
-      String rootTopic = ROOT_MQ_ROOT;
-      String readyTopic = ROOT_MQ_ROOT + DEVICE_MAC_ADDRESS;
-
-      String otaTopic = ROOT_MQ_ROOT + OTA_MQ_SUB + DEVICE_MAC_ADDRESS;
-
-      String productMessageTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + MESSAGE_MQ_STUB;
-      String productCountTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + COUNT_MQ_STUB;
-
-      String messageTopic = ROOT_MQ_ROOT + MESSAGE_MQ_STUB + DEVICE_MAC_ADDRESS;
-      String countTopic = ROOT_MQ_ROOT + COUNT_MQ_STUB + DEVICE_MAC_ADDRESS;
-
       String readyMessage = DEVICE_MAC_ADDRESS + " is Ready.";
       mqttClient.publish(readyTopic.c_str(), "Ready!");
       mqttClient.publish(rootTopic.c_str(), readyMessage.c_str());
+      mqttClient.publish(presenceTopic.c_str(), "0");
 
       mqttClient.subscribe(rootTopic.c_str());
       mqttClient.subscribe(otaTopic.c_str());
-
+      mqttClient.subscribe(presenceDemandTopic.c_str());
       mqttClient.subscribe(productMessageTopic.c_str());
       mqttClient.subscribe(productCountTopic.c_str());
 
@@ -190,6 +212,7 @@ void setup()
 
   Serial.begin(115200);
   DEVICE_MAC_ADDRESS = KaaroUtils::getMacAddress();
+  mqttSetTopicValues();
   Serial.println(DEVICE_MAC_ADDRESS);
   WiFi.macAddress(mac);
   Serial.print("MAC: ");
@@ -259,7 +282,7 @@ void loop()
       cases = 3;
       break;
     case 3:
-      display.showCustomMessage(" Cowork.Network.Grow ");
+      display.showCustomMessage(PRODUCT_UNIQUE);
       cases = 4;
       break;
     case 4:
@@ -280,4 +303,16 @@ void loop()
   }
   mqttClient.loop();
   display.loop();
+  pushEveryLoop();
+}
+
+
+void pushEveryLoop() {
+  
+  
+  if(current_loop_counter%brain_beat == 0) {
+    current_brain_counter++;
+    mqttClient.publish(presenceTopic.c_str(), String(current_brain_counter).c_str());
+  }
+  current_loop_counter++;
 }

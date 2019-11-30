@@ -5,6 +5,7 @@
 #include <MD_MAX72xx.h>
 
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW
+
 #define MAX_DEVICES 4
 #define CLK_PIN 14
 #define DATA_PIN 23

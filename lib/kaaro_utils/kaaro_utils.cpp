@@ -22,4 +22,5 @@ class KaaroUtils
 
         return String(hwMacStringReady);
     }
+
 };
