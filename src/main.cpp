@@ -31,7 +31,7 @@ const unsigned long long brain_beat = 1000000;
 
 String META_ROOT = "Kento/present/";
 String ROOT_MQ_ROOT = "digitalicon/";
-String PRODUCT_MQ_SUB = "kaaroCount/";
+String PRODUCT_MQ_SUB = "officialkrat/";
 String MESSAGE_MQ_STUB = "message";
 String COUNT_MQ_STUB = "count";
 String OTA_MQ_SUB = "ota/";
@@ -51,7 +51,7 @@ String messageTopic;
 String countTopic;
   
 
-String PRODUCT_UNIQUE = " Hakuna Matata ";
+String PRODUCT_UNIQUE = " @officialkrat ";
 
 /* 
     FUNCTION DEFINATIONS
@@ -88,7 +88,7 @@ uint32_t target_counter = 0;
 
 unsigned long delayStart = 0; // the time the delay started
 bool delayRunning = false;
-unsigned int interval = 30000;
+unsigned int interval = 10000;
 
 /*
   HY Variable/Instance creation
@@ -170,7 +170,7 @@ void mqttSetTopicValues() {
 void reconnect()
 {
 
-  while (!mqttClient.connected())
+  if (!mqttClient.connected())
   {
     Serial.print("Attempting MQTT connection...");
 
@@ -207,6 +207,29 @@ void reconnect()
   }
 }
 
+void WiFiReconnect(){
+  // wifi_config_t conf;
+  // esp_wifi_get_config(WIFI_IF_STA, &conf);
+  // pass =  String(reinterpret_cast<char*>(conf.sta.password));
+  // Serial.printf("Pass : %s", pass);
+  // WiFi.disconnect();
+  // WiFi.mode(WIFI_STA);
+  // WiFi.begin(ssid.c_str(),pass.c_str());
+if (wifiManager.getWiFiIsSaved()){
+      // wifiManager.stopConfigPortal();
+    wifiManager.autoConnect("Digital Icon");
+}
+    if (WiFi.status() == WL_CONNECTED)
+  {
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    IPAddress ip = WiFi.localIP();
+    Serial.println(ip);
+
+  }
+}
+
 void setup()
 {
 
@@ -228,7 +251,7 @@ void setup()
   Serial.print(":");
   Serial.println(mac[5], HEX);
   preferences.begin("digitalicon", false);
-  target_counter = preferences.getUInt("target_counter", 720);
+  target_counter = preferences.getUInt("target_counter", 499);
   Serial.println("Boot setup with ");
   Serial.println(target_counter);
 
@@ -252,9 +275,9 @@ void setup()
     Serial.println("IP address: ");
     IPAddress ip = WiFi.localIP();
     Serial.println(ip);
-
-    ssid = WiFi.SSID();
-    pass = WiFi.psk();
+  }
+  else{
+    WiFiReconnect();
   }
 
   mqttClient.setServer(mqtt_server, 1883);
@@ -300,10 +323,14 @@ void loop()
     {
       reconnect();
     }
+      mqttClient.loop();
+      pushEveryLoop();
   }
-  mqttClient.loop();
+  else{
+    WiFiReconnect();
+  }
   display.loop();
-  pushEveryLoop();
+  
 }
 
 
