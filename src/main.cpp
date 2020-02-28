@@ -31,7 +31,7 @@ const unsigned long long brain_beat = 1000000;
 
 String META_ROOT = "Kento/present/";
 String ROOT_MQ_ROOT = "digitalicon/";
-String PRODUCT_MQ_SUB = "vidiyoshoutout/";
+String PRODUCT_MQ_SUB = "twitchkarx01/";
 String MESSAGE_MQ_STUB = "message";
 String COUNT_MQ_STUB = "count";
 String OTA_MQ_SUB = "ota/";
@@ -51,7 +51,7 @@ String messageTopic;
 String countTopic;
   
 
-String PRODUCT_UNIQUE = " Shoutout Count ";
+String PRODUCT_UNIQUE = " On Air Time	 ";
 
 /* 
     FUNCTION DEFINATIONS
