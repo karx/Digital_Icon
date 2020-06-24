@@ -154,9 +154,13 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
 
   if(topics == productConfigTopic) {
     if(msg == F("inUpdate")) {
-      display.updateTextAnimationIn();
+      int new_val = display.updateTextAnimationIn();
+      preferences.putUInt("text_in_anm", new_val);
+
     } else if (msg == String("outUpdate")) {
-      display.updateTextAnimationOut();
+      int new_val = display.updateTextAnimationOut();
+      preferences.putUInt("text_out_anm", new_val);
+
     }
   }
   
@@ -218,13 +222,16 @@ void setup() {
   display.setupIcon();
   preferences.begin("digitalicon", false);
   uint32_t target_counter = preferences.getUInt("target_counter", 499);
+  int textInAnimation = preferences.getUInt("text_in_anm", 1);
+  int textOutAnimation = preferences.getUInt("text_out_anm", 1);
   Serial.println("Boot setup with ");
   Serial.println(target_counter);
   char str[100];
   sprintf(str, "%d", target_counter);
   String s = str;
   display.updateCounterValue(s, true);
-
+  display.updateTextAnimationIn(textInAnimation);
+  display.updateTextAnimationOut(textOutAnimation);
 
   print_oled(F("startn"),2);
   wm.debugPlatformInfo();
