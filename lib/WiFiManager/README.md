@@ -1,6 +1,10 @@
 
 # WiFiManager
+## DEVELOPMENT BRANCH
+
 ESP8266 WiFi Connection manager with fallback web configuration portal
+
+:warning: This Documentation is out of date for this branch, see notes below
 
 [![Build Status](https://travis-ci.org/tzapu/WiFiManager.svg?branch=development)](https://travis-ci.org/tzapu/WiFiManager)
 
@@ -11,11 +15,11 @@ The configuration portal is of the captive variety, so on various devices it wil
 
 First attempt at a library. Lots more changes and fixes to do. Contributions are welcome.
 
-**This works with the ESP8266 Arduino platform with a recent stable release(2.0.0 or newer)**
+**This works with the ESP8266 Arduino platform**
 
 [https://github.com/esp8266/Arduino](https://github.com/esp8266/Arduino)
 
-**This works with the ESP32 Arduino platform with staging** 
+**This works with the ESP32 Arduino platform** 
 
 [https://github.com/espressif/arduino-esp32](https://github.com/espressif/arduino-esp32)
 
@@ -29,7 +33,7 @@ First attempt at a library. Lots more changes and fixes to do. Contributions are
    - Installing
      - [Arduino - Through Library Manager](#install-through-library-manager)
      - [Arduino - From Github](#checkout-from-github)
-     - [PlatformIO]
+     - [PlatformIO](#install-using-platformio)
    - [Using](#using)
  - [Documentation](#documentation)
    - [Access Point Password](#password-protect-the-configuration-access-point)
@@ -146,6 +150,31 @@ After you write your sketch and start the ESP, it will try to connect to WiFi. I
 While in AP mode, connect to it then open a browser to the gateway IP, default 192.168.4.1, configure wifi, save and it should reboot and connect.
 
 Also see [examples](https://github.com/tzapu/WiFiManager/tree/master/examples).
+
+#### Install Using PlatformIO
+
+[PlatformIO](https://platformio.org/) is an emerging ecosystem for IoT development, and 
+is an alternative to using the Arduino IDE. Install `WiFiManager`
+using the platformio [library manager](https://docs.platformio.org/en/latest/librarymanager/index.htm) in your editor, 
+or using the [PlatformIO Core CLI](https://docs.platformio.org/en/latest/userguide/demo.html#library-manager),
+or by adding it to your `platformio.ini` as shown below (recommended approach).
+
+The simplest way is to open the `platformio.ini` file at the root of your project, and `WifiManager` to the common top-level env
+`lib_deps` key like so:
+
+```
+[env]
+lib_deps =
+	WiFiManager
+```
+
+If you want to install the development branch, then you'll need to use the `repository#tag` format instead:
+
+```
+[env]
+lib_deps =
+	https://github.com/tzapu/WiFiManager.git#development
+```
 
 ## Documentation
 
@@ -267,6 +296,8 @@ wifiManager.setSTAStaticIPConfig(IPAddress(192,168,0,99), IPAddress(192,168,0,1)
 ```
 There are a couple of examples in the examples folder that show you how to set a static IP and even how to configure it through the web configuration portal.
 
+NOTE: You should fill DNS server if you have HTTP requests with hostnames or syncronize time (NTP). It's the same as gateway ip or a popular (Google DNS: 8.8.8.8).
+
 #### Custom HTML, CSS, Javascript
 There are various ways in which you can inject custom HTML, CSS or Javascript into the configuration portal.
 The options are:
@@ -284,6 +315,7 @@ wifiManager.addParameter(&custom_text);
 Just add the bit you want added as the last parameter to the custom parameter constructor.
 ```cpp
 WiFiManagerParameter custom_mqtt_server("server", "mqtt server", "iot.eclipse", 40, " readonly");
+wifiManager.addParameter(&custom_mqtt_server);
 ```
 
 #### Theming

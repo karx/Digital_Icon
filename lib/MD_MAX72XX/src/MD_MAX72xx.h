@@ -1,5 +1,4 @@
-#ifndef MD_MAX72xx_h
-#define MD_MAX72xx_h
+#pragma once
 
 #include <Arduino.h>
 
@@ -58,6 +57,13 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 \page pageRevisionHistory Revision History
+Oct 2019 version 3.2.1
+- First large (150 module system) - increase size of SPI counters to int16_t
+
+Sep 2019 version 3.2.0
+- Change character codes to 16 bit to allow up to 65535 characters in font table.
+- Retested examples for clean compile with new version of compiler.
+
 May 2019 version 3.1.0
 - Changed font definition to more modern look.
 - Font ASCII code > 127 now conforms to unicode Latin-1 supplement.
@@ -253,18 +259,10 @@ enough current for the number of connected modules.
 
 // Display parameter constants
 // Defined values that are used throughout the library to define physical limits
-#ifndef ROW_SIZE
 #define ROW_SIZE  8   ///< The size in pixels of a row in the device LED matrix array
-#endif
-#ifndef COL_SIZE
 #define COL_SIZE  8   ///< The size in pixels of a column in the device LED matrix array
-#endif
-#ifndef MAX_INTENSITY
 #define MAX_INTENSITY 0xf ///< The maximum intensity value that can be set for a LED array
-#endif
-#ifndef MAX_SCANLIMIT
 #define MAX_SCANLIMIT 7   ///< The maximum scan limit value that can be set for the devices
-#endif
 
 /**
  * Core object for the MD_MAX72XX library
@@ -436,8 +434,8 @@ public:
    * Invokes the control function for each device in turn for the devices in the subset.
    * See documentation for the control() method.
    *
-   * \param startDev  the first device for the transformation [0..getDeviceCount()-1]
-   * \param endDev    the last device for the transformation [0..getDeviceCount()-1]
+   * \param startDev  the first device for the control action [0..getDeviceCount()-1]
+   * \param endDev    the last device for the control action [0..getDeviceCount()-1]
    * \param mode      one of the defined control requests.
    * \param value     parameter value or one of the control status defined.
    * \return false if parameter errors, true otherwise.
@@ -836,7 +834,7 @@ public:
    * \param buf   address of the user buffer supplied.
    * \return width (in columns) of the character, 0 if parameter errors.
    */
-  uint8_t getChar(uint8_t c, uint8_t size, uint8_t *buf);
+  uint8_t getChar(uint16_t c, uint8_t size, uint8_t *buf);
 
   /**
    * Load a character from the font data starting at a specific column.
@@ -851,7 +849,7 @@ public:
    * \param c   the character to display.
    * \return width (in columns) of the character, 0 if parameter errors.
    */
-  uint8_t setChar(uint16_t col, uint8_t c);
+  uint8_t setChar(uint16_t col, uint16_t c);
 
   /**
    * Set the current font table.
@@ -951,8 +949,8 @@ private:
      uint8_t version;     // (v1) font definition version number (for compliance)
      uint8_t height;      // (v1) font height in pixels
      uint8_t widthMax;    // (v1) font maximum width in pixels (widest character)
-     uint8_t firstASCII;  // (v1) the first ASCII character in the font table
-     uint8_t lastASCII;   // (v1) the last ASCII character in the font table
+     uint16_t firstASCII; // (v1,2) the first character code in the font table
+     uint16_t lastASCII;  // (v1,2) the last character code in the font table
      uint16_t dataOffset; // (v1) offset from the start of table to first character definition
    } fontInfo_t;
 
@@ -960,10 +958,10 @@ private:
   fontType_t  *_fontData;   // pointer to the current font data being used
   fontInfo_t  _fontInfo;    // properties of the current font table
 
-  void    setFontInfoDefault(void);     // set the default parameters for the font info file
-  void    loadFontInfo(void);           // load the font info block from the font data
-  uint8_t getFontWidth(void);           // get the maximum font width by inspecting the font table
-  int16_t getFontCharOffset(uint8_t c); // find the character in the font data. If not there, return -1
+  void    setFontInfoDefault(void);      // set the default parameters for the font info file
+  void    loadFontInfo(void);            // load the font info block from the font data
+  uint8_t getFontWidth(void);            // get the maximum font width by inspecting the font table
+  int32_t getFontCharOffset(uint16_t c); // find the character in the font data. If not there, return -1
 #endif
 
   // Private functions
@@ -992,5 +990,3 @@ private:
   bool setR(uint8_t buf, uint8_t r, uint8_t value);
 
 };
-
-#endif

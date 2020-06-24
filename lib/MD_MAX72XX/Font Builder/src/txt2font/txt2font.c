@@ -71,7 +71,7 @@ int initialise(void)
   G.name[0] = NUL;
   G.doubleHeight = 0;
   G.bufSize = SINGLE_HEIGHT;
-  G.fixedWidth = 4;
+  G.fixedWidth = 0;
   G.fontHeight = 8;
 
   return(0);

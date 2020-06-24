@@ -8,8 +8,6 @@
 <!-- HTTP_STYLE -->
 <style>
 
-
-
 :root{
 	 /* CSS VARIABLE THEME COLOR */
 	/*--primarycolor:#9933CC;*/
@@ -141,12 +139,12 @@ a:hover {
 .msg.P h4 {
     color: var(--primarycolor);
 }
-/*.msg.S {
+.msg.S {
     border-left-color: #5cb85c;
 }
 .msg.S h4 {
     color: #5cb85c;
-}*/
+}
 .msg.D {
     border-left-color: #dc3630;
 }
@@ -168,11 +166,18 @@ button.D{
 	background-color:#dc3630;
 }
 
+input:disabled {
+	opacity: 0.5;
+}
+
 </style>
 <!-- /HTTP_STYLE -->
 <!-- HTTP_SCRIPT -->
 		<script>
-			function c(l){document.getElementById('s').value=l.innerText||l.textContent;document.getElementById('p').focus();}
+		function c(l){document.getElementById('s').value=l.innerText||l.textContent;
+		p = l.nextElementSibling.classList.contains('l');
+		document.getElementById('p').disabled = !p;
+		if(p)document.getElementById('p').focus()};
 		</script>
 <!-- /HTTP_SCRIPT -->
 <!-- HTTP_HEAD_END -->
@@ -196,6 +201,7 @@ button.D{
 			<form action='/erase' method='post'><button class='D'>Erase</button></form><br/>
 			<form action='/restart' method='post'><button>Restart</button></form><br/>
 			<form action='/exit' method='post'><button>Exit</button></form><br/>
+			<form action='/' method='post'><button>Back</button></form><br/>
 			<!-- /HTTP_PORTAL_MENU -->
 			<!-- SAMPLE -->
 			<h2>/wifi</h2><hr>
@@ -239,9 +245,7 @@ button.D{
 			<br/><form action='/wifi' method='get'><button>Refresh</button></form>
 			<!-- /HTTP_SCAN_LINK -->
 			<!-- HTTP_SAVED -->
-			<div class='msg'><h4>Saving Credentialsssssss</h4>Trying to connect ESP to network.<br />If it fails reconnect to AP to try again <br/> <form>
-					<input type="button" value="Get Authentication" onclick="window.location.href='http://www.hyperlinkcode.com/button-links.php'" />
-			</div>
+			<div class='msg'><h4>Saving Credentials</h4>Trying to connect ESP to network.<br />If it fails reconnect to AP to try again</div>
 			<!-- /HTTP_SAVED -->
 			<!-- HTTP_STATUS_ON -->
 			<div class='msg P'><strong>Connected</strong> to {v}<br/><em><small>with IP {i}</small></em></div>
@@ -266,8 +270,11 @@ button.D{
 			<div class='msg'>No AP set</div>
 			<!-- /HTTP_STATUS_NONE -->
 			<!-- SAMPLE -->
-			<div class='msg P'><h4>H4 Color Header</h4>content</div>
+			<div class='msg P'><h4>H4 Color Header P</h4>content</div>
 			<!-- /SAMPLE -->
+			<!-- SAMPLE -->
+			<div class='msg S'><h4>H4 Color Header S</h4>content</div>
+			<!-- /SAMPLE -->	
 			<!-- SAMPLE -->
 			<h2>/info</h3><hr>
 			<dl>

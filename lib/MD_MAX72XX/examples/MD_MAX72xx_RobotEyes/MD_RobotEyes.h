@@ -156,19 +156,19 @@ protected:
   } animState_t;
 
   // Define an animation frame
-  typedef struct animFrame_t
+  struct animFrame_t
   {
     uint8_t eyeData[2];  // [LEFT_MODULE_OFFSET] and [RIGHT_MODULE_OFFSET] eye character from font data
     uint16_t timeFrame;  // time for this frame in milliseconds
   };
 
   // Define an entry in the animation sequence lookup table
-  typedef struct
+  struct animTable_t
   {
     emotion_t   e;
-    animFrame_t *seq;
+    const animFrame_t *seq;
     uint8_t     size;
-  } animTable_t;
+  };
 
   // Display parameters
   MD_MAX72XX  *_M;
@@ -188,7 +188,7 @@ protected:
   bool        _animReverse;   // true = reverse sequence, false = normal sequence
   bool        _autoReverse;   // true = always play the reverse, false = selected direction only
   emotion_t   _nextEmotion;   // the next emotion to display
-  char *      _pText;         // pointer to text data in user code. Not null means there is text to print
+  const char *_pText;         // pointer to text data in user code. Not nullptr means there is text to print
 
   // Methods
   void loadEye(uint8_t module, uint8_t ch);
