@@ -226,7 +226,7 @@ void setup() {
   display.updateCounterValue(s, true);
 
 
-  print_oled(F("Starting..."),2);
+  print_oled(F("startn"),2);
   wm.debugPlatformInfo();
   
   // invert theme, dark

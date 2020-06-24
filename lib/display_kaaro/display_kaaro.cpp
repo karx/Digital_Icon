@@ -4,7 +4,7 @@
 uint32_t stoi(String payload, int len);
 
 uint8_t scrollSpeed = 25;
-int scrollEffectIn = PA_SCAN_HORIZ;
+int scrollEffectIn = PA_SCROLL_LEFT;
 int scrollEffectOut = PA_SCROLL_LEFT;
 textPosition_t scrollAlign = PA_LEFT;
 uint16_t scrollPause = 2000;
@@ -150,8 +150,8 @@ int DigitalIconDisplay::setupIcon()
     ParolaDisplay.begin();
     ParolaDisplay.setInvert(false);
     ParolaDisplay.setIntensity(15);
-    ParolaDisplay.displayText(BOOT_TEXT, PA_CENTER, 70, 100, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
     delay(1000);
+    ParolaDisplay.displayText(String("Yo").c_str(), PA_CENTER, 70, 100, PA_SCROLL_LEFT);
     ParolaDisplay.displayAnimate();
     return 1;
 }
@@ -248,27 +248,29 @@ int DigitalIconDisplay::updateCounterValue(String new_counter_value, bool isStri
     ); 
 }
 int DigitalIconDisplay::updateTextAnimationIn() {
-    updateTextAnimationIn(-1);
+    return updateTextAnimationIn(-1);
 }
 int DigitalIconDisplay::updateTextAnimationIn(int mode) {
     if (mode > -1) 
         scrollEffectIn = mode;
     else
         scrollEffectIn++;
+    updateDisplayState(MESSAGE);
     refreshScreenWithText();    // To play a sample
-    return 1;
+    return scrollEffectIn;
 }
 
 int DigitalIconDisplay::updateTextAnimationOut() {
-    updateTextAnimationOut(-1);
+    return updateTextAnimationOut(-1);
 }
 int DigitalIconDisplay::updateTextAnimationOut(int mode) {
     if (mode > -1)
         scrollEffectOut = mode;
     else 
         scrollEffectOut++;
+    updateDisplayState(MESSAGE);
     refreshScreenWithText();    //To play a sample
-    return 1;
+    return scrollEffectOut;
 }
 
 void DigitalIconDisplay::loop()
