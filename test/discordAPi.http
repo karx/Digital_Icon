@@ -1,0 +1,6 @@
+//Gets Count of members & members Online
+###
+
+GET https://discord.com/api/guilds/552881714196774953
+    ?with_counts=true
+Authorization: Bot {{xxx}}
