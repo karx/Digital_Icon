@@ -23,7 +23,7 @@ unsigned long mtime = 0;
 
 // TEST OPTION FLAGS
 bool TEST_CP         = true; // always start the configportal, even if ap found
-int  TESP_CP_TIMEOUT = 90; // test cp timeout
+int  TESP_CP_TIMEOUT = 10; // test cp timeout
 
 bool TEST_NET        = true; // do a network test after connect, (gets ntp time)
 bool ALLOWONDEMAND   = true; // enable on demand
@@ -56,6 +56,7 @@ String ROOT_MQ_ROOT = "digitalicon/";
 String PRODUCT_MQ_SUB = "discordakcount/";
 String MESSAGE_MQ_STUB = "message";
 String COUNT_MQ_STUB = "count";
+String CUSTOM_MQ_STUB = "config";
 String OTA_MQ_SUB = "ota/";
 
 String presenceTopic;
@@ -68,6 +69,7 @@ String otaTopic;
 
 String productMessageTopic;
 String productCountTopic;
+String productConfigTopic;
 
 String messageTopic;
 String countTopic;
@@ -108,6 +110,7 @@ void mqttSetTopicValues() {
 
   productMessageTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + MESSAGE_MQ_STUB;
   productCountTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + COUNT_MQ_STUB;
+  productConfigTopic = ROOT_MQ_ROOT + PRODUCT_MQ_SUB + CUSTOM_MQ_STUB;
 
   messageTopic = ROOT_MQ_ROOT + MESSAGE_MQ_STUB + '/' + DEVICE_MAC_ADDRESS;
   countTopic = ROOT_MQ_ROOT + COUNT_MQ_STUB + '/' + DEVICE_MAC_ADDRESS;
@@ -149,6 +152,13 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
     display.showCustomMessage(msg);
   }
 
+  if(topics == productConfigTopic) {
+    if(msg == F("inUpdate")) {
+      display.updateTextAnimationIn();
+    } else if (msg == String("outUpdate")) {
+      display.updateTextAnimationOut();
+    }
+  }
   
 }
 
@@ -177,6 +187,7 @@ void reconnect()
       mqttClient.subscribe(presenceDemandTopic.c_str());
       mqttClient.subscribe(productMessageTopic.c_str());
       mqttClient.subscribe(productCountTopic.c_str());
+      mqttClient.subscribe(productConfigTopic.c_str());
 
       mqttClient.subscribe(messageTopic.c_str());
       mqttClient.subscribe(countTopic.c_str());
@@ -196,7 +207,6 @@ void setup() {
   WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
   // put your setup code here, to run once:
   Serial.begin(115200);
-  display.setupIcon();
 
   delay(1000);
   Serial.println("\n Starting");
@@ -205,6 +215,16 @@ void setup() {
   #ifdef WM_OLED
     init_oled();
   #endif
+  display.setupIcon();
+  preferences.begin("digitalicon", false);
+  uint32_t target_counter = preferences.getUInt("target_counter", 499);
+  Serial.println("Boot setup with ");
+  Serial.println(target_counter);
+  char str[100];
+  sprintf(str, "%d", target_counter);
+  String s = str;
+  display.updateCounterValue(s, true);
+
 
   print_oled(F("Starting..."),2);
   wm.debugPlatformInfo();
@@ -255,7 +275,6 @@ void setup() {
 
   wifiInfo();
 
-  print_oled(F("Connecting..."),2);  
   if(!wm.autoConnect("WM_AutoConnectAP","12345678")) {
     Serial.println("failed to connect and hit timeout");
     print_oled("Not Connected",2);
@@ -283,14 +302,6 @@ void setup() {
 
   DEVICE_MAC_ADDRESS = KaaroUtils::getMacAddress();
   mqttSetTopicValues(); 
-  preferences.begin("digitalicon", false);
-  uint32_t target_counter = preferences.getUInt("target_counter", 499);
-  Serial.println("Boot setup with ");
-  Serial.println(target_counter);
-  char str[100];
-  sprintf(str, "%d", target_counter);
-  String s = str;
-  display.updateCounterValue(s, true);
 
   mqttClient.setServer(mqtt_server, 1883);
   mqttClient.setCallback(mqttCallback);
@@ -423,12 +434,9 @@ void print_oled(String str,uint8_t size){
 }
 #else
   void print_oled(String str,uint8_t size){
-    Serial.print("[PRINT OLED]");
-    Serial.println(str);
-    display.showCustomMessage("Test");
+    display.showCustomMessage(str);
 
-    (void)str;
-    (void)size;
+    
   }
 #endif
 

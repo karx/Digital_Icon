@@ -4,7 +4,8 @@
 uint32_t stoi(String payload, int len);
 
 uint8_t scrollSpeed = 25;
-textEffect_t scrollEffect = PA_SCROLL_LEFT;
+int scrollEffectIn = PA_SCAN_HORIZ;
+int scrollEffectOut = PA_SCROLL_LEFT;
 textPosition_t scrollAlign = PA_LEFT;
 uint16_t scrollPause = 2000;
 
@@ -150,7 +151,7 @@ int DigitalIconDisplay::setupIcon()
     ParolaDisplay.setInvert(false);
     ParolaDisplay.setIntensity(15);
     ParolaDisplay.displayText(BOOT_TEXT, PA_CENTER, 70, 100, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
-        delay(1000);
+    delay(1000);
     ParolaDisplay.displayAnimate();
     return 1;
 }
@@ -217,12 +218,19 @@ int DigitalIconDisplay::showCustomMessage(char *custom_text)
 {
     strcpy(display_text, custom_text);
     updateDisplayState(MESSAGE);
+    loop();
     return 1;
 }
 int DigitalIconDisplay::showCustomMessage(String custom_text) 
 {
     char buff[100];
     custom_text.toCharArray(buff, 100);
+    return showCustomMessage(buff);
+}
+int DigitalIconDisplay::showCustomMessage(String custom_text, uint8_t size) 
+{
+    char *buff = new char[size + 1];
+    custom_text.toCharArray(buff, size);
     return showCustomMessage(buff);
 }
 
@@ -238,6 +246,29 @@ int DigitalIconDisplay::updateCounterValue(String new_counter_value, bool isStri
     return updateCounterValue(
         stoi(new_counter_value, new_counter_value.length())
     ); 
+}
+int DigitalIconDisplay::updateTextAnimationIn() {
+    updateTextAnimationIn(-1);
+}
+int DigitalIconDisplay::updateTextAnimationIn(int mode) {
+    if (mode > -1) 
+        scrollEffectIn = mode;
+    else
+        scrollEffectIn++;
+    refreshScreenWithText();    // To play a sample
+    return 1;
+}
+
+int DigitalIconDisplay::updateTextAnimationOut() {
+    updateTextAnimationOut(-1);
+}
+int DigitalIconDisplay::updateTextAnimationOut(int mode) {
+    if (mode > -1)
+        scrollEffectOut = mode;
+    else 
+        scrollEffectOut++;
+    refreshScreenWithText();    //To play a sample
+    return 1;
 }
 
 void DigitalIconDisplay::loop()
@@ -260,7 +291,12 @@ void DigitalIconDisplay::loop()
 
         if (target_counter_value > current_counter_value)
         {
-            toShow += (target_counter_value - current_counter_value) / 2 + 1;
+            toShow += (target_counter_value - current_counter_value) / 5 + 1;
+            current_counter_value = toShow;
+        }
+        else if (target_counter_value < current_counter_value)
+        {
+            toShow -= (current_counter_value - target_counter_value) / 5 + 1;
             current_counter_value = toShow;
         }
         else
@@ -310,7 +346,7 @@ int DigitalIconDisplay::refreshScreenWithText()
 {
     ParolaDisplay.setFont(ExtASCII);
     delay(100);
-    ParolaDisplay.displayText(display_text, PA_CENTER, 70, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+    ParolaDisplay.displayText(display_text, PA_CENTER, 70, 1000, (textEffect_t)scrollEffectIn, (textEffect_t)scrollEffectOut);
     ParolaDisplay.displayAnimate();
     return 1;
 }

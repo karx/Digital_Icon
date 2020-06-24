@@ -11,7 +11,7 @@
 #define DATA_PIN 23
 #define CS_PIN 15
 
-#define BOOT_TEXT " Cowork.Network.Grow "
+#define BOOT_TEXT " Yo "
 #define TIMEOUT_PERIOD 9000
 
 enum di_display_states
@@ -61,8 +61,13 @@ public:
     int updateCounterValue(String new_counter_value, bool isString);
     int showCustomMessage(char *custom_text);
     int showCustomMessage(String custom_text);
+    int showCustomMessage(String custom_text, uint8_t size);
     int updateDisplayState(di_display_states updated_state);
     int updateDisplayMode(di_display_mode updated_mode);
+    int updateTextAnimationIn();
+    int updateTextAnimationIn(int mode);
+    int updateTextAnimationOut();
+    int updateTextAnimationOut(int mode);
     void loop();
 
 private:
