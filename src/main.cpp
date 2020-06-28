@@ -157,7 +157,7 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
     currentNeoMode++;
     ws2812fx.setMode(currentNeoMode%totalNeoModes);
     ws2812fx.trigger();
-    mqttClient.publish("digitalicon/discordakcount/message",(char *) ws2812fx.getModeName(currentNeoMode));
+    mqttClient.publish("digitalicon/discordakcount/message",(char *) ws2812fx.getModeName(currentNeoMode%totalNeoModes));
   }
 
   if (topics == productConfigTopic)
