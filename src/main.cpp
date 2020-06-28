@@ -1,4 +1,4 @@
-# define DI_Version "2.0.0-kaaroCount-Snap"
+#define DI_Version "2.0.0-kaaroCount-Snap"
 #include <Arduino.h>
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include <time.h>
@@ -6,39 +6,43 @@
 #include <PubSubClient.h>
 
 #define USEOTA
-  #ifdef USEOTA
-  #include <WiFiUdp.h>
-  #include <ArduinoOTA.h>
+#ifdef USEOTA
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
 #endif
 
 #include "display_kaaro.h"
 #include "kaaro_utils.cpp"
 
 #include <Preferences.h>
+#include <WS2812FX.h>
+#define LED_COUNT 11
+#define LED_PIN 15
 /*
    Things for Wifi & Network
 */
-const char* modes[] = { "NULL", "STA", "AP", "STA+AP" };
+const char *modes[] = {"NULL", "STA", "AP", "STA+AP"};
 unsigned long mtime = 0;
 
 // TEST OPTION FLAGS
-bool TEST_CP         = true; // always start the configportal, even if ap found
-int  TESP_CP_TIMEOUT = 10; // test cp timeout
+bool TEST_CP = true;      // always start the configportal, even if ap found
+int TESP_CP_TIMEOUT = 10; // test cp timeout
 
-bool TEST_NET        = true; // do a network test after connect, (gets ntp time)
-bool ALLOWONDEMAND   = true; // enable on demand
-int  ONDDEMANDPIN    = 0; // gpio for button  
+bool TEST_NET = true;      // do a network test after connect, (gets ntp time)
+bool ALLOWONDEMAND = true; // enable on demand
+int ONDDEMANDPIN = 0;      // gpio for button
 
 void handleRoute();
-void print_oled(String str,uint8_t size);
+void print_oled(String str, uint8_t size);
 void wifiInfo();
 void getTime();
 
 void saveWifiCallback();
-void configModeCallback (WiFiManager *myWiFiManager);
+void configModeCallback(WiFiManager *myWiFiManager);
 void saveParamCallback();
 void bindServerCallback();
 
+uint32_t stoi_i(String payload, int len);
 
 /*
   Things for Product
@@ -53,7 +57,7 @@ const unsigned long long brain_beat = 1000000;
 
 String META_ROOT = "Kento/present/";
 String ROOT_MQ_ROOT = "digitalicon/";
-String PRODUCT_MQ_SUB = "discordakcount/";
+String PRODUCT_MQ_SUB = "pcBoxLight/";
 String MESSAGE_MQ_STUB = "message";
 String COUNT_MQ_STUB = "count";
 String CUSTOM_MQ_STUB = "config";
@@ -73,12 +77,9 @@ String productConfigTopic;
 
 String messageTopic;
 String countTopic;
-  
 
 String PRODUCT_UNIQUE = " Messages Exchanged ";
 String DEVICE_MAC_ADDRESS;
-
-
 
 /* 
     FUNCTION DEFINATIONS
@@ -88,7 +89,6 @@ void mqttCallback(char *topic, byte *payload, unsigned int length);
 void mqttSetTopicValues();
 void pushEveryLoop();
 
-
 /* 
     HY Variable/Instance creation
 */
@@ -97,12 +97,15 @@ WiFiManager wm;
 PubSubClient mqttClient(mqtt_server, 1883, mqttCallback, wifiClient);
 DigitalIconDisplay display;
 Preferences preferences;
+WS2812FX ws2812fx = WS2812FX(LED_COUNT, LED_PIN, NEO_RGBW + NEO_KHZ800);
+int currentNeoMode = 0;
+int totalNeoModes = 55;
 
-
-void mqttSetTopicValues() {
+void mqttSetTopicValues()
+{
   presenceTopic = META_ROOT + DEVICE_MAC_ADDRESS;
   presenceDemandTopic = META_ROOT + "REPORT";
-  
+
   rootTopic = ROOT_MQ_ROOT;
   readyTopic = ROOT_MQ_ROOT + DEVICE_MAC_ADDRESS;
 
@@ -141,31 +144,37 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   }
   if (topics == productCountTopic)
   {
+
     Serial.println(msg + " | From count topic");
-    uint32_t counterVal = display.updateCounterValue(msg, true);
-    preferences.putUInt("target_counter", counterVal);
+    uint32_t counterVal = stoi_i(msg, msg.length());
+    ws2812fx.setSpeed(counterVal);
+    // preferences.putUInt("target_counter", counterVal);
   }
 
   if (topics == productMessageTopic || topics == messageTopic)
   {
-    Serial.println(msg + " | From message topic");
-    display.showCustomMessage(msg);
+    // neo_clean_cycle();
+    currentNeoMode++;
+    ws2812fx.setMode(currentNeoMode%totalNeoModes);
+    ws2812fx.trigger();
+    mqttClient.publish("digitalicon/discordakcount/message",(char *) ws2812fx.getModeName(currentNeoMode));
   }
 
-  if(topics == productConfigTopic) {
-    if(msg == F("inUpdate")) {
-      int new_val = display.updateTextAnimationIn();
-      preferences.putUInt("text_in_anm", new_val);
-
-    } else if (msg == String("outUpdate")) {
-      int new_val = display.updateTextAnimationOut();
-      preferences.putUInt("text_out_anm", new_val);
-
+  if (topics == productConfigTopic)
+  {
+    if (msg == F("start"))
+    {
+      ws2812fx.start();
+    }
+    else if (msg == F("stop"))
+    {
+      ws2812fx.stop();
+    }
+    else if (msg == F("trigger")) {
+      ws2812fx.trigger();
     }
   }
-  
 }
-
 
 void reconnect()
 {
@@ -207,18 +216,24 @@ void reconnect()
     }
   }
 }
-void setup() {
+void setup()
+{
   WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
   // put your setup code here, to run once:
   Serial.begin(115200);
+  
+  ws2812fx.init();
+  ws2812fx.setBrightness(100);
+  ws2812fx.setSpeed(200);
+  ws2812fx.setMode(FX_MODE_CHASE_BLACKOUT);
+  ws2812fx.start();
 
   delay(1000);
   Serial.println("\n Starting");
-  
-  
-  #ifdef WM_OLED
-    init_oled();
-  #endif
+
+#ifdef WM_OLED
+  init_oled();
+#endif
   display.setupIcon();
   preferences.begin("digitalicon", false);
   uint32_t target_counter = preferences.getUInt("target_counter", 499);
@@ -233,16 +248,16 @@ void setup() {
   display.updateTextAnimationIn(textInAnimation);
   display.updateTextAnimationOut(textOutAnimation);
 
-  print_oled(F("startn"),2);
+  print_oled(F("startn"), 2);
   wm.debugPlatformInfo();
-  
+
   // invert theme, dark
   wm.setClass("invert");
 
   // setup some parameters
   WiFiManagerParameter custom_html("<h3>Get your Snacks!</h3>"); // only custom html
-  // 
-  const char _customHtml_checkbox[] = "type=\"checkbox\""; 
+  //
+  const char _customHtml_checkbox[] = "type=\"checkbox\"";
   WiFiManagerParameter custom_checkbox("checkbox", "my checkbox", "T", 2, _customHtml_checkbox, WFM_LABEL_AFTER);
 
   // callbacks
@@ -256,107 +271,118 @@ void setup() {
   wm.addParameter(&custom_checkbox);
 
   // set values later if you want
-  custom_html.setValue("test",4);
+  custom_html.setValue("test", 4);
 
-  std::vector<const char *> menu = {"wifi","wifinoscan","info","param","close","sep","erase","restart","exit"};
+  std::vector<const char *> menu = {"wifi", "wifinoscan", "info", "param", "close", "sep", "erase", "restart", "exit"};
   // wm.setMenu(menu); // custom menu, pass vector
-  
+
   // wm.setParamsPage(true); // move params to seperate page, not wifi, do not combine with setmenu!
 
   // set country
-  // setting wifi country seems to improve OSX soft ap connectivity, 
+  // setting wifi country seems to improve OSX soft ap connectivity,
   // may help others as well, default is CN which has different channels
-  wm.setCountry("IN"); 
+  wm.setCountry("IN");
 
   // set Hostname
-  wm.setHostname("WIFIMANAGER_HOSTNAME");
+  wm.setHostname("pcBoxLightDevicePC");
 
   //sets timeout until configuration portal gets turned off
   //useful to make it all retry or go to sleep in seconds
   wm.setConfigPortalTimeout(120);
-  
+
   // This is sometimes necessary, it is still unknown when and why this is needed but it may solve some race condition or bug in esp SDK/lib
   // wm.setCleanConnect(true); // disconnect before connect, clean connect
-  
+
   wm.setBreakAfterConfig(true);
 
   wifiInfo();
 
-  if(!wm.autoConnect("WM_AutoConnectAP","12345678")) {
+  if (!wm.autoConnect("WM_pcBoxLight", "12345678"))
+  {
     Serial.println("failed to connect and hit timeout");
-    print_oled("Not Connected",2);
+    print_oled("Not Connected", 2);
   }
-  else if(TEST_CP) {
+  else if (TEST_CP)
+  {
     // start configportal always
     delay(1000);
     Serial.println("TEST_CP ENABLED");
     wm.setConfigPortalTimeout(TESP_CP_TIMEOUT);
-    wm.startConfigPortal("WM_ConnectAP");
+    wm.startConfigPortal("pcBoxLightDevicePC");
   }
-  else {
+  else
+  {
     //if you get here you have connected to the WiFi
-     Serial.println("connected...yeey :)");
-      print_oled("Connected\nIP: " + WiFi.localIP().toString() + "\nSSID: " + WiFi.SSID(),1);    
+    Serial.println("connected...yeey :)");
+    print_oled("Connected\nIP: " + WiFi.localIP().toString() + "\nSSID: " + WiFi.SSID(), 1);
   }
-  
+
   wifiInfo();
 
   pinMode(ONDDEMANDPIN, INPUT_PULLUP);
 
-  #ifdef USEOTA
-    ArduinoOTA.begin();
-  #endif
+#ifdef USEOTA
+  ArduinoOTA.begin();
+#endif
 
   DEVICE_MAC_ADDRESS = KaaroUtils::getMacAddress();
-  mqttSetTopicValues(); 
+  mqttSetTopicValues();
 
   mqttClient.setServer(mqtt_server, 1883);
   mqttClient.setCallback(mqttCallback);
 }
 
-void wifiInfo(){
+void wifiInfo()
+{
   WiFi.printDiag(Serial);
   Serial.println("SAVED: " + (String)wm.getWiFiIsSaved() ? "YES" : "NO");
   Serial.println("SSID: " + (String)wm.getWiFiSSID());
   Serial.println("PASS: " + (String)wm.getWiFiPass());
 }
 
-void loop() {
-  #ifdef USEOTA
-    ArduinoOTA.handle();
-  #endif
-  
+void loop()
+{
+    ws2812fx.service();
+#ifdef USEOTA
+  ArduinoOTA.handle();
+#endif
+
   // is configuration portal requested?
-  if (ALLOWONDEMAND && digitalRead(ONDDEMANDPIN) == LOW ) {
+  if (ALLOWONDEMAND && digitalRead(ONDDEMANDPIN) == LOW)
+  {
     delay(100);
-    if ( digitalRead(ONDDEMANDPIN) == LOW ){
+    if (digitalRead(ONDDEMANDPIN) == LOW)
+    {
       Serial.println("BUTTON PRESSED");
       wm.setConfigPortalTimeout(140);
       wm.setParamsPage(false); // move params to seperate page, not wifi, do not combine with setmenu!
 
       // disable captive portal redirection
       // wm.setCaptivePortalEnable(false);
-      
-      if (!wm.startConfigPortal("OnDemandAP","12345678")) {
+
+      if (!wm.startConfigPortal("OnDemand pcBoxLightDevicePC", "12345678"))
+      {
         Serial.println("failed to connect and hit timeout");
         delay(3000);
       }
     }
-    else {
+    else
+    {
       //if you get here you have connected to the WiFi
       Serial.println("connected...yeey :)");
-      print_oled("Connected\nIP: " + WiFi.localIP().toString() + "\nSSID: " + WiFi.SSID(),1);    
+      print_oled("Connected\nIP: " + WiFi.localIP().toString() + "\nSSID: " + WiFi.SSID(), 1);
       getTime();
     }
   }
 
-  if(WiFi.status() == WL_CONNECTED && millis()-mtime > 10000 ){
+  if (WiFi.status() == WL_CONNECTED && millis() - mtime > 10000)
+  {
     getTime();
     mtime = millis();
   }
 
   // put your main code here, to run repeatedly:
-  
+
   if (WiFi.status() == WL_CONNECTED)
   {
 
@@ -371,19 +397,22 @@ void loop() {
   delay(100);
 }
 
-void getTime() {
-  int tz           = 5.5;
-  int dst          = 0;
-  time_t now       = time(nullptr);
+void getTime()
+{
+  int tz = 5.5;
+  int dst = 0;
+  time_t now = time(nullptr);
   unsigned timeout = 5000;
-  unsigned start   = millis();  
+  unsigned start = millis();
   configTime(tz * 3600, dst * 3600, "pool.ntp.org", "time.nist.gov");
   Serial.print("Waiting for NTP time sync: ");
-  while (now < 8 * 3600 * 2 ) {
+  while (now < 8 * 3600 * 2)
+  {
     delay(100);
     Serial.print(".");
     now = time(nullptr);
-    if((millis() - start) > timeout){
+    if ((millis() - start) > timeout)
+    {
       Serial.println("\n[ERROR] Failed to get NTP time.");
       return;
     }
@@ -395,11 +424,12 @@ void getTime() {
   Serial.print(asctime(&timeinfo));
 }
 
-void debugchipid(){
+void debugchipid()
+{
   // WiFi.mode(WIFI_STA);
   // WiFi.printDiag(Serial);
   // Serial.println(modes[WiFi.getMode()]);
-  
+
   // ESP.eraseConfig();
   // wm.resetSettings();
   // wm.erase(true);
@@ -419,74 +449,97 @@ void debugchipid(){
 }
 
 #ifdef WM_OLED
-void init_oled(){
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32
+void init_oled()
+{
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+  { // Address 0x3C for 128x32
     Serial.println(F("SSD1306 allocation failed"));
   }
 
   display.clearDisplay();
-  display.setTextSize(1);             // Normal 1:1 pixepl scale
-  display.setTextColor(WHITE);        // Draw white text
-  display.setCursor(0,0);             // Start at top-left corner
+  display.setTextSize(1); // Normal 1:1 pixepl
+  scale
+      display.setTextColor(WHITE); // Draw white text
+  display.setCursor(0, 0);         // Start at top-left corner
   display.display();
 }
 
-void print_oled(String str,uint8_t size){
+void print_oled(String str, uint8_t size)
+{
   display.clearDisplay();
   display.setTextSize(size);
   display.setTextColor(WHITE);
-  display.setCursor(0,0);
+  display.setCursor(0, 0);
   display.println(str);
   display.display();
 }
 #else
-  void print_oled(String str,uint8_t size){
-    display.showCustomMessage(str);
-
-    
-  }
+void print_oled(String str, uint8_t size)
+{
+  display.showCustomMessage(str);
+}
 #endif
 
-
-
-void saveWifiCallback(){
+void saveWifiCallback()
+{
   Serial.println("[CALLBACK] saveCallback fired");
 }
 
 //gets called when WiFiManager enters configuration mode
-void configModeCallback (WiFiManager *myWiFiManager) {
+void configModeCallback(WiFiManager *myWiFiManager)
+{
   Serial.println("[CALLBACK] configModeCallback fired");
-  #ifdef ESP8266
-    print_oled("WiFiManager Waiting\nIP: " + WiFi.softAPIP().toString() + "\nSSID: " + WiFi.softAPSSID(),1); 
-  #endif  
-  // myWiFiManager->setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0)); 
+#ifdef ESP8266
+  print_oled("WiFiManager Waiting\nIP: " + WiFi.softAPIP().toString() + "\nSSID: " + WiFi.softAPSSID(), 1);
+#endif
+  // myWiFiManager->setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
   // Serial.println(WiFi.softAPIP());
   //if you used auto generated SSID, print it
   // Serial.println(myWiFiManager->getConfigPortalSSID());
 }
 
-void saveParamCallback(){
+void saveParamCallback()
+{
   Serial.println("[CALLBACK] saveParamCallback fired");
   // wm.stopConfigPortal();
 }
 
-void bindServerCallback(){
-  wm.server->on("/custom",handleRoute);
+void bindServerCallback()
+{
+  wm.server->on("/custom", handleRoute);
   // wm.server->on("/info",handleRoute); // you can override wm!
 }
 
-void handleRoute(){
+void handleRoute()
+{
   Serial.println("[HTTP] handle route");
   wm.server->send(200, "text/plain", "hello from user code");
 }
 
+void pushEveryLoop()
+{
 
-void pushEveryLoop() {
-  
-  
-  if(current_loop_counter%brain_beat == 0) {
+  if (current_loop_counter % brain_beat == 0)
+  {
     current_brain_counter++;
     mqttClient.publish(presenceTopic.c_str(), String(current_brain_counter).c_str());
   }
   current_loop_counter++;
+}
+
+
+
+
+
+uint32_t stoi_i(String payload, int len)
+{
+  uint32_t i = 0;
+  uint32_t result = 0;
+  for (i = 0; i < len; i++)
+  {
+    result *= 10;
+    result += (char)payload[i] - '0';
+  }
+
+  return result;
 }
